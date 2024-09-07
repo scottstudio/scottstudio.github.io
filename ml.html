@@ -41,7 +41,7 @@
     </style>
 </head>
 <body>
-    <h1>Control WebGL with Phone Motion</h1>
+    <h1>H5 Test</h1>
     <button id="enableMotion">Enable Motion Access</button>
     <canvas id="glCanvas" width="300" height="300"></canvas>
     <div id="debug">Motion: N/A</div>
@@ -57,6 +57,14 @@
                     if (permissionState === 'granted') {
                         window.addEventListener('devicemotion', handleMotionEvent);
                         document.getElementById('enableMotion').style.display = 'none';
+
+                        // Test Vibration API
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(200); // Vibrate for 200ms to test
+                            console.log("Vibration API supported, vibration triggered.");
+                        } else {
+                            console.log("Vibration API not supported on this device.");
+                        }
                     } else {
                         alert('Permission denied for motion data.');
                     }
@@ -66,6 +74,14 @@
                 // For devices that don't need explicit permission
                 window.addEventListener('devicemotion', handleMotionEvent);
                 document.getElementById('enableMotion').style.display = 'none';
+                
+                // Test Vibration API
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(200); // Vibrate for 200ms to test
+                    console.log("Vibration API supported, vibration triggered.");
+                } else {
+                    console.log("Vibration API not supported on this device.");
+                }
             }
         });
 
@@ -86,7 +102,9 @@
 
             // Trigger vibration if tilt exceeds 45 degrees on either axis
             if (Math.abs(tiltX) > 45 || Math.abs(tiltY) > 45) {
-                navigator.vibrate(200); // Vibrate for 200ms
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(200); // Vibrate for 200ms
+                }
             }
         }
 

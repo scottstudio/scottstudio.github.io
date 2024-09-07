@@ -41,7 +41,7 @@
     </style>
 </head>
 <body>
-    <h1>HAP2 Control WebGL with Phone Motion</h1>
+    <h1> HAP4</h1>
     <button id="enableMotion">Enable Motion Access</button>
     <canvas id="glCanvas" width="300" height="300"></canvas>
     <div id="debug">Motion: N/A</div>
@@ -70,14 +70,22 @@
         });
 
         function handleMotionEvent(event) {
-            rotationX = event.accelerationIncludingGravity.x / 10; // Adjust sensitivity
-            rotationY = event.accelerationIncludingGravity.y / 10;
+            const accX = event.accelerationIncludingGravity.x;
+            const accY = event.accelerationIncludingGravity.y;
+            const accZ = event.accelerationIncludingGravity.z;
+
+            // Calculate tilt angles using trigonometry
+            const tiltX = Math.atan2(accX, accZ) * (180 / Math.PI);  // Tilt angle in degrees (X axis)
+            const tiltY = Math.atan2(accY, accZ) * (180 / Math.PI);  // Tilt angle in degrees (Y axis)
+
+            rotationX = tiltX / 10;  // Adjust sensitivity
+            rotationY = tiltY / 10;
 
             // Show debug data
-            document.getElementById('debug').innerHTML = `Motion: X=${rotationX.toFixed(2)}, Y=${rotationY.toFixed(2)}`;
+            document.getElementById('debug').innerHTML = `Tilt: X=${tiltX.toFixed(2)}°, Y=${tiltY.toFixed(2)}°`;
 
-            // Trigger vibration if rotation exceeds a threshold
-            if (Math.abs(rotationX) > 0.5 || Math.abs(rotationY) > 0.5) {
+            // Trigger vibration if tilt exceeds 45 degrees on either axis
+            if (Math.abs(tiltX) > 45 || Math.abs(tiltY) > 45) {
                 navigator.vibrate(200); // Vibrate for 200ms
             }
         }

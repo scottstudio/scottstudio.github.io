@@ -32,12 +32,19 @@
             font-size: 18px;
             padding: 10px 20px;
         }
+        #debug {
+            position: absolute;
+            bottom: 20px;
+            font-size: 16px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
-    <h1>Haptic Control WebGL with Phone Motion</h1>
+    <h1>HAP2 Control WebGL with Phone Motion</h1>
     <button id="enableMotion">Enable Motion Access</button>
     <canvas id="glCanvas" width="300" height="300"></canvas>
+    <div id="debug">Motion: N/A</div>
 
     <script>
         let rotationX = 0;
@@ -56,6 +63,7 @@
                 })
                 .catch(console.error);
             } else {
+                // For devices that don't need explicit permission
                 window.addEventListener('devicemotion', handleMotionEvent);
                 document.getElementById('enableMotion').style.display = 'none';
             }
@@ -64,6 +72,9 @@
         function handleMotionEvent(event) {
             rotationX = event.accelerationIncludingGravity.x / 10; // Adjust sensitivity
             rotationY = event.accelerationIncludingGravity.y / 10;
+
+            // Show debug data
+            document.getElementById('debug').innerHTML = `Motion: X=${rotationX.toFixed(2)}, Y=${rotationY.toFixed(2)}`;
 
             // Trigger vibration if rotation exceeds a threshold
             if (Math.abs(rotationX) > 0.5 || Math.abs(rotationY) > 0.5) {
@@ -91,4 +102,119 @@
 
             const fsSource = `
                 void main(void) {
-                    gl_FragColor = vec4(0.
+                    gl_FragColor = vec4(0.0, 0.5, 0.5, 1.0);
+                }
+            `;
+
+            const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+            const programInfo = {
+                program: shaderProgram,
+                attribLocations: {
+                    vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+                },
+                uniformLocations: {
+                    projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+                    modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+                },
+            };
+
+            const buffers = initBuffers(gl);
+
+            function render() {
+                drawScene(gl, programInfo, buffers, rotationX, rotationY);
+                requestAnimationFrame(render);
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        function initBuffers(gl) {
+            const positionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+            const positions = [
+                -0.5, -0.5,
+                 0.5, -0.5,
+                 0.5,  0.5,
+                -0.5,  0.5,
+            ];
+
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+            return {
+                position: positionBuffer,
+            };
+        }
+
+        function drawScene(gl, programInfo, buffers, rotationX, rotationY) {
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            const fieldOfView = 45 * Math.PI / 180;
+            const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+            const zNear = 0.1;
+            const zFar = 100.0;
+            const projectionMatrix = mat4.create();
+            mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+
+            const modelViewMatrix = mat4.create();
+            mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -3.0]);
+
+            // Apply rotation based on motion data
+            mat4.rotate(modelViewMatrix, modelViewMatrix, rotationX, [1, 0, 0]); // X-axis
+            mat4.rotate(modelViewMatrix, modelViewMatrix, rotationY, [0, 1, 0]); // Y-axis
+
+            {
+                const numComponents = 2;
+                const type = gl.FLOAT;
+                const normalize = false;
+                const stride = 0;
+                const offset = 0;
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+                gl.vertexAttribPointer(programInfo.attribLocations.vertexPosition, numComponents, type, normalize, stride, offset);
+                gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+            }
+
+            gl.useProgram(programInfo.program);
+
+            gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
+            gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
+
+            gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+        }
+
+        function initShaderProgram(gl, vsSource, fsSource) {
+            const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+            const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+            const shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+                return null;
+            }
+
+            return shaderProgram;
+        }
+
+        function loadShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                alert('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+
+            return shader;
+        }
+
+        window.onload = main;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+</body>
+</html>

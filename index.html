@@ -1,0 +1,46 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Sensor Data Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #data {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Phone Motion Data Viewer</h1>
+    <p>Move your phone to see real-time data</p>
+    <div id="data">
+        <p>Acceleration (X, Y, Z): <span id="acceleration"></span></p>
+        <p>Rotation Rate (Alpha, Beta, Gamma): <span id="rotationRate"></span></p>
+    </div>
+
+    <script>
+        if (window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', function(event) {
+                // Acceleration data
+                let acc = event.acceleration;
+                let accData = `X: ${acc.x.toFixed(2)}, Y: ${acc.y.toFixed(2)}, Z: ${acc.z.toFixed(2)}`;
+                document.getElementById('acceleration').textContent = accData;
+
+                // Rotation rate data
+                let rotRate = event.rotationRate;
+                let rotRateData = `Alpha: ${rotRate.alpha.toFixed(2)}, Beta: ${rotRate.beta.toFixed(2)}, Gamma: ${rotRate.gamma.toFixed(2)}`;
+                document.getElementById('rotationRate').textContent = rotRateData;
+            });
+        } else {
+            alert('DeviceMotion is not supported on your device.');
+        }
+    </script>
+</body>
+</html>

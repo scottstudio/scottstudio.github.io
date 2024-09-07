@@ -25,21 +25,39 @@
         <p>Rotation Rate (Alpha, Beta, Gamma): <span id="rotationRate"></span></p>
     </div>
 
-    <script>
-        if (window.DeviceMotionEvent) {
-            window.addEventListener('devicemotion', function(event) {
-                // Acceleration data
-                let acc = event.acceleration;
-                let accData = `X: ${acc.x.toFixed(2)}, Y: ${acc.y.toFixed(2)}, Z: ${acc.z.toFixed(2)}`;
-                document.getElementById('acceleration').textContent = accData;
+    <button id="enableMotion" style="font-size: 18px;">Enable Motion Access</button>
 
-                // Rotation rate data
-                let rotRate = event.rotationRate;
-                let rotRateData = `Alpha: ${rotRate.alpha.toFixed(2)}, Beta: ${rotRate.beta.toFixed(2)}, Gamma: ${rotRate.gamma.toFixed(2)}`;
-                document.getElementById('rotationRate').textContent = rotRateData;
-            });
-        } else {
-            alert('DeviceMotion is not supported on your device.');
+    <script>
+        document.getElementById('enableMotion').addEventListener('click', function() {
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS 13+ requires permission to access motion data
+                DeviceMotionEvent.requestPermission()
+                .then(function(permissionState) {
+                    if (permissionState === 'granted') {
+                        window.addEventListener('devicemotion', handleMotionEvent);
+                        document.getElementById('enableMotion').style.display = 'none'; // Hide the button once permission is granted
+                    } else {
+                        alert('Permission denied for motion data.');
+                    }
+                })
+                .catch(console.error);
+            } else {
+                // For non-iOS devices, directly add the event listener
+                window.addEventListener('devicemotion', handleMotionEvent);
+                document.getElementById('enableMotion').style.display = 'none'; // Hide the button
+            }
+        });
+
+        function handleMotionEvent(event) {
+            // Acceleration data
+            let acc = event.acceleration;
+            let accData = `X: ${acc.x.toFixed(2)}, Y: ${acc.y.toFixed(2)}, Z: ${acc.z.toFixed(2)}`;
+            document.getElementById('acceleration').textContent = accData;
+
+            // Rotation rate data
+            let rotRate = event.rotationRate;
+            let rotRateData = `Alpha: ${rotRate.alpha.toFixed(2)}, Beta: ${rotRate.beta.toFixed(2)}, Gamma: ${rotRate.gamma.toFixed(2)}`;
+            document.getElementById('rotationRate').textContent = rotRateData;
         }
     </script>
 </body>
